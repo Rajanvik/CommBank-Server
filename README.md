@@ -8,13 +8,24 @@ Production-ready backend server and test suite for CommBank.
 CommBank-Server/
 │
 ├── 📂 server/                          # ASP.NET Core Web API
-│   ├── 📁 Configurations/             # All application configurations & setup modules
+│   ├── 📁 Configurations/             # Setup modules
 │   │   ├── DotEnvLoader.cs            # Environment (.env) loader
 │   │   ├── DatabaseSetup.cs           # MongoDB connection & client setup
 │   │   ├── DependencyInjection.cs     # Application services registration
 │   │   └── MiddlewarePipeline.cs      # CORS, Swagger & HTTP request pipeline
-│   ├── 📁 Controllers/                # API Endpoints (Account, Auth, Goal, User, etc.)
-│   ├── 📁 Models/                     # Data Models & Schemas
+│   ├── 📁 Controllers/                # API Endpoints
+│   │   ├── AccountController.cs
+│   │   ├── AuthController.cs
+│   │   ├── GoalController.cs
+│   │   ├── TagController.cs
+│   │   ├── TransactionController.cs
+│   │   └── UserController.cs
+│   ├── 📁 Models/                     # Core Database Models (Exact 5 from ERD)
+│   │   ├── Account.cs                 # Account Model + AccountType Enum
+│   │   ├── Goal.cs                    # Goal Model
+│   │   ├── Tag.cs                     # Tag Model
+│   │   ├── Transaction.cs             # Transaction Model + TransactionType Enum
+│   │   └── User.cs                    # User Model + LoginInput
 │   ├── 📁 Services/                   # Business Logic & DB queries
 │   ├── 📁 Properties/                 # Launch profiles
 │   ├── 📄 Program.cs                  # Clean Entry Point (20 lines)
@@ -35,8 +46,13 @@ CommBank-Server/
 │   ├── Transactions.json
 │   └── Users.json
 │
-├── 📂 scripts/                         # Database utility scripts
-│   └── seed.py                        # Automated database seed script
+├── 📂 docs/                            # Comparison & architecture guides
+│   ├── NEXTJS_PRISMA_VS_CSHARP_DOTNET.md
+│   └── NEXTJS_PRISMA_VS_CSHARP_DOTNET.pdf
+│
+├── 📂 scripts/                         # Utility scripts
+│   ├── seed.py                        # Automated database seed script
+│   └── generate_pdf.py                # Guide PDF generator
 │
 ├── 📄 Server.sln                      # Solution file
 ├── 📄 README.md                       # Documentation
@@ -50,10 +66,8 @@ CommBank-Server/
 ```bash
 cp .env.example .env
 ```
-Fill in your MongoDB credentials in `.env`.
 
 ### 2. Seed Database
-To seed the initial sample data into MongoDB Atlas:
 ```bash
 python3 scripts/seed.py
 ```

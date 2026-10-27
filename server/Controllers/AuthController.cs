@@ -1,16 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using CommBank.Services;
-using CommBank.Models;
 
 namespace CommBank.Controllers;
+
+public record LoginInput(string Email, string Password);
 
 [ApiController]
 [Route("api/Auth")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public AuthController(AuthService authService) =>
+    public AuthController(IAuthService authService) =>
         _authService = authService;
 
     [HttpPost("Login")]

@@ -1,8 +1,15 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace CommBank.Models;
+
+public enum TransactionType
+{
+    Credit,
+    Debit,
+    Transfer
+}
 
 public class Transaction
 {

@@ -1,8 +1,14 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace CommBank.Models;
+
+public enum AccountType
+{
+    GoalSaver,
+    NetBankSaver
+}
 
 public class Account
 {
