@@ -14,6 +14,10 @@ public class AuthController : ControllerBase
     public AuthController(IAuthService authService) =>
         _authService = authService;
 
+    // ==========================================
+    // AUTHENTICATION (Login) -> POST: api/Auth/Login
+    // Email aur password verify karke user authentication karta hai
+    // ==========================================
     [HttpPost("Login")]
     public async Task<IActionResult> Post(LoginInput input)
     {
