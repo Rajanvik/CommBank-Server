@@ -1,0 +1,2244 @@
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..0436f54
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1 @@
++MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.w6ovktj.mongodb.net/
+diff --git a/.gitignore b/.gitignore
+index 6769715..cb5ac43 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -405,3 +405,10 @@ ASALocalRun/
+ .localhistory/
+ 
+ 
++
++# Environment Variables
++.env
++.env.*
++!.env.example
++
++
+diff --git a/CommBank-Server/Controllers/HomeController.cs b/CommBank-Server/Controllers/HomeController.cs
+deleted file mode 100644
+index 1bbc6cf..0000000
+--- a/CommBank-Server/Controllers/HomeController.cs
++++ /dev/null
+@@ -1,32 +0,0 @@
+-﻿using System.Diagnostics;
+-using Microsoft.AspNetCore.Mvc;
+-using CommBank.Models;
+-
+-namespace CommBank.Controllers;
+-
+-public class HomeController : Controller
+-{
+-    private readonly ILogger<HomeController> _logger;
+-
+-    public HomeController(ILogger<HomeController> logger)
+-    {
+-        _logger = logger;
+-    }
+-
+-    public IActionResult Index()
+-    {
+-        return View();
+-    }
+-
+-    public IActionResult Privacy()
+-    {
+-        return View();
+-    }
+-
+-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+-    public IActionResult Error()
+-    {
+-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+-    }
+-}
+-
+diff --git a/CommBank-Server/Models/AccountType.cs b/CommBank-Server/Models/AccountType.cs
+deleted file mode 100644
+index 869149a..0000000
+--- a/CommBank-Server/Models/AccountType.cs
++++ /dev/null
+@@ -1,7 +0,0 @@
+-﻿namespace CommBank.Models;
+-
+-public enum AccountType
+-{
+-    GoalSaver,
+-    NetBankSaver
+-}
+\ No newline at end of file
+diff --git a/CommBank-Server/Models/ErrorViewModel.cs b/CommBank-Server/Models/ErrorViewModel.cs
+deleted file mode 100644
+index 4020492..0000000
+--- a/CommBank-Server/Models/ErrorViewModel.cs
++++ /dev/null
+@@ -1,9 +0,0 @@
+-﻿namespace CommBank.Models;
+-
+-public class ErrorViewModel
+-{
+-    public string? RequestId { get; set; }
+-
+-    public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+-}
+-
+diff --git a/CommBank-Server/Models/LoginInput.cs b/CommBank-Server/Models/LoginInput.cs
+deleted file mode 100644
+index deb7336..0000000
+--- a/CommBank-Server/Models/LoginInput.cs
++++ /dev/null
+@@ -1,20 +0,0 @@
+-﻿namespace CommBank.Models;
+-
+-interface ILoginInput
+-{
+-    string Email { get; set; }
+-    string Password { get; set; }
+-}
+-
+-
+-public class LoginInput : ILoginInput
+-{
+-    public LoginInput(string email, string password)
+-    {
+-        Email = email;
+-        Password = password;
+-    }
+-
+-    public string Email { get; set; }
+-    public string Password { get; set; }
+-}
+diff --git a/CommBank-Server/Models/ObjectIdConverter.cs b/CommBank-Server/Models/ObjectIdConverter.cs
+deleted file mode 100644
+index ef17bbb..0000000
+--- a/CommBank-Server/Models/ObjectIdConverter.cs
++++ /dev/null
+@@ -1,26 +0,0 @@
+-﻿using MongoDB.Bson;
+-using Newtonsoft.Json;
+-
+-class ObjectIdConverter : JsonConverter
+-{
+-
+-    public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+-    {
+-        if (value is not null)
+-        {
+-            serializer.Serialize(writer, value.ToString());
+-        }
+-    }
+-
+-    public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+-    {
+-        throw new NotImplementedException();
+-    }
+-
+-    public override bool CanConvert(Type objectType)
+-    {
+-        return typeof(ObjectId).IsAssignableFrom(objectType);
+-    }
+-
+-
+-}
+\ No newline at end of file
+diff --git a/CommBank-Server/Models/TransactionType.cs b/CommBank-Server/Models/TransactionType.cs
+deleted file mode 100644
+index 8c5d115..0000000
+--- a/CommBank-Server/Models/TransactionType.cs
++++ /dev/null
+@@ -1,9 +0,0 @@
+-﻿namespace CommBank.Models;
+-
+-public enum TransactionType
+-{
+-    Credit,
+-    Debit,
+-    Transfer
+-}
+-
+diff --git a/CommBank-Server/Models/UpdatedIcon.cs b/CommBank-Server/Models/UpdatedIcon.cs
+deleted file mode 100644
+index 9b3602f..0000000
+--- a/CommBank-Server/Models/UpdatedIcon.cs
++++ /dev/null
+@@ -1,17 +0,0 @@
+-﻿namespace CommBank.Models;
+-
+-interface IUpdatedIcon
+-{
+-    string Icon { get; set; }
+-}
+-
+-
+-public class UpdatedIcon : IUpdatedIcon
+-{
+-    public UpdatedIcon(string icon)
+-    {
+-        Icon = icon;
+-    }
+-
+-    public string Icon { get; set; }
+-}
+diff --git a/CommBank-Server/Program.cs b/CommBank-Server/Program.cs
+deleted file mode 100644
+index a88e560..0000000
+--- a/CommBank-Server/Program.cs
++++ /dev/null
+@@ -1,53 +0,0 @@
+-﻿using CommBank.Models;
+-using CommBank.Services;
+-using MongoDB.Driver;
+-
+-var builder = WebApplication.CreateBuilder(args);
+-
+-builder.Services.AddControllers();
+-
+-builder.Services.AddEndpointsApiExplorer();
+-builder.Services.AddSwaggerGen();
+-
+-builder.Configuration.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("Secrets.json");
+-
+-var mongoClient = new MongoClient(builder.Configuration.GetConnectionString("CommBank"));
+-var mongoDatabase = mongoClient.GetDatabase("CommBank");
+-
+-IAccountsService accountsService = new AccountsService(mongoDatabase);
+-IAuthService authService = new AuthService(mongoDatabase);
+-IGoalsService goalsService = new GoalsService(mongoDatabase);
+-ITagsService tagsService = new TagsService(mongoDatabase);
+-ITransactionsService transactionsService = new TransactionsService(mongoDatabase);
+-IUsersService usersService = new UsersService(mongoDatabase);
+-
+-builder.Services.AddSingleton(accountsService);
+-builder.Services.AddSingleton(authService);
+-builder.Services.AddSingleton(goalsService);
+-builder.Services.AddSingleton(tagsService);
+-builder.Services.AddSingleton(transactionsService);
+-builder.Services.AddSingleton(usersService);
+-
+-builder.Services.AddCors();
+-
+-var app = builder.Build();
+-
+-app.UseCors(builder => builder
+-   .AllowAnyOrigin()
+-   .AllowAnyMethod()
+-   .AllowAnyHeader());
+-
+-if (app.Environment.IsDevelopment())
+-{
+-    app.UseSwagger();
+-    app.UseSwaggerUI();
+-}
+-
+-app.UseHttpsRedirection();
+-
+-app.UseAuthorization();
+-
+-app.MapControllers();
+-
+-app.Run();
+-
+diff --git a/CommBank-Server/Services/TagsService.cs b/CommBank-Server/Services/TagsService.cs
+deleted file mode 100644
+index daf8e58..0000000
+--- a/CommBank-Server/Services/TagsService.cs
++++ /dev/null
+@@ -1,30 +0,0 @@
+-﻿using Microsoft.Extensions.Options;
+-using CommBank.Models;
+-using MongoDB.Driver;
+-
+-namespace CommBank.Services;
+-
+-public class TagsService : ITagsService
+-{
+-    private readonly IMongoCollection<Models.Tag> _tagsCollection;
+-
+-    public TagsService(IMongoDatabase mongoDatabase)
+-    {
+-        _tagsCollection = mongoDatabase.GetCollection<Models.Tag>("Tags");
+-    }
+-
+-    public async Task<List<Models.Tag>> GetAsync() =>
+-        await _tagsCollection.Find(_ => true).ToListAsync();
+-
+-    public async Task<Models.Tag?> GetAsync(string id) =>
+-        await _tagsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+-
+-    public async Task CreateAsync(Models.Tag newTag) =>
+-        await _tagsCollection.InsertOneAsync(newTag);
+-
+-    public async Task UpdateAsync(string id, Models.Tag updatedTag) =>
+-        await _tagsCollection.ReplaceOneAsync(x => x.Id == id, updatedTag);
+-
+-    public async Task RemoveAsync(string id) =>
+-        await _tagsCollection.DeleteOneAsync(x => x.Id == id);
+-}
+\ No newline at end of file
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..ca1dc1e
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,116 @@
++# CommBank Server
++
++Production-ready backend server and test suite for CommBank.
++
++## 📁 Project Architecture
++
++```text
++CommBank-Server/
++│
++├── 📂 server/                          # ASP.NET Core Web API
++│   ├── 📁 Configurations/             # Setup & configuration modules
++│   │   ├── DotEnvLoader.cs            # Environment (.env) loader
++│   │   ├── DatabaseSetup.cs           # MongoDB connection & client setup
++│   │   ├── DependencyInjection.cs     # Application services registration
++│   │   └── MiddlewarePipeline.cs      # CORS, Swagger & HTTP request pipeline
++│   │
++│   ├── 📁 Controllers/                # HTTP API Routers (Domain Folders)
++│   │   ├── 📁 Accounts/
++│   │   │   └── AccountController.cs   # Exposes /api/account
++│   │   ├── 📁 Auth/
++│   │   │   └── AuthController.cs      # Exposes /api/auth
++│   │   ├── 📁 Goals/
++│   │   │   └── GoalController.cs      # Exposes /api/goal
++│   │   ├── 📁 Tags/
++│   │   │   └── TagController.cs       # Exposes /api/tag
++│   │   ├── 📁 Transactions/
++│   │   │   └── TransactionController.cs # Exposes /api/transaction
++│   │   └── 📁 Users/
++│   │       └── UserController.cs      # Exposes /api/user
++│   │
++│   ├── 📁 Models/                     # Core Database Models (Pure ERD Entities)
++│   │   ├── Account.cs                 # Account Model + AccountType Enum
++│   │   ├── Goal.cs                    # Goal Model
++│   │   ├── Tag.cs                     # Tag Model
++│   │   ├── Transaction.cs             # Transaction Model + TransactionType Enum
++│   │   └── User.cs                    # User Model
++│   │
++│   ├── 📁 Services/                   # Domain Services (Queries & Mutations)
++│   │   ├── 📁 Accounts/
++│   │   │   ├── IAccountsService.cs    # Contract
++│   │   │   ├── AccountsQuery.cs       # GET Operations (Read Data)
++│   │   │   └── AccountsMutation.cs    # POST / PUT / DELETE Operations (Write Data)
++│   │   ├── 📁 Auth/
++│   │   │   ├── IAuthService.cs
++│   │   │   └── AuthMutation.cs        # Login & Auth Mutations
++│   │   ├── 📁 Goals/
++│   │   │   ├── IGoalsService.cs
++│   │   │   ├── GoalsQuery.cs          # GET Operations
++│   │   │   └── GoalsMutation.cs       # POST / PUT / DELETE Operations
++│   │   ├── 📁 Tags/
++│   │   │   ├── ITagsService.cs
++│   │   │   ├── TagsQuery.cs           # GET Operations
++│   │   │   └── TagsMutation.cs        # POST / PUT / DELETE Operations
++│   │   ├── 📁 Transactions/
++│   │   │   ├── ITransactionsService.cs
++│   │   │   ├── TransactionsQuery.cs   # GET Operations
++│   │   │   └── TransactionsMutation.cs# POST / PUT / DELETE Operations
++│   │   └── 📁 Users/
++│   │       ├── IUsersService.cs
++│   │       ├── UsersQuery.cs          # GET Operations
++│   │       └── UsersMutation.cs       # POST / PUT / DELETE Operations
++│   │
++│   ├── 📁 Properties/                 # Launch profiles
++│   ├── 📄 Program.cs                  # Clean Entry Point (20 lines)
++│   ├── 📄 CommBank.csproj             # Project configuration
++│   ├── 📄 Secrets.json                # Local secrets template (Git-safe)
++│   ├── 📄 appsettings.json            # Base settings
++│   └── 📄 appsettings.Development.json# Dev settings
++│
++├── 📂 tests/                           # Test Suite (xUnit)
++│   ├── 📁 Fake/                       # Mock Data
++│   ├── 📄 *ControllerTests.cs         # Test files
++│   └── 📄 CommBank.Tests.csproj       # Test project file
++│
++├── 📂 data/                            # Initial Database Seed JSON files
++│   ├── Accounts.json
++│   ├── Goals.json
++│   ├── Tags.json
++│   ├── Transactions.json
++│   └── Users.json
++│
++├── 📂 docs/                            # Comparison & architecture guides
++│   ├── NEXTJS_PRISMA_VS_CSHARP_DOTNET.md
++│   └── NEXTJS_PRISMA_VS_CSHARP_DOTNET.pdf
++│
++├── 📂 scripts/                         # Utility scripts
++│   ├── seed.py                        # Automated database seed script
++│   └── generate_pdf.py                # Guide PDF generator
++│
++├── 📄 Server.sln                      # Solution file
++├── 📄 README.md                       # Documentation
++├── 📄 .env                            # Real MongoDB URI (Git-ignored)
++└── 📄 .env.example                    # Env template
++```
++
++## 🚀 Getting Started
++
++### 1. Environment Setup
++```bash
++cp .env.example .env
++```
++
++### 2. Seed Database
++```bash
++python3 scripts/seed.py
++```
++
++### 3. Run Server
++```bash
++dotnet run --project server
++```
++
++### 4. Run Tests
++```bash
++dotnet test tests
++```
+diff --git a/Server.sln b/Server.sln
+index 326f984..c4b6b8c 100644
+--- a/Server.sln
++++ b/Server.sln
+@@ -1,11 +1,11 @@
+-﻿
++
+ Microsoft Visual Studio Solution File, Format Version 12.00
+ # Visual Studio Version 16
+ VisualStudioVersion = 25.0.1700.1
+ MinimumVisualStudioVersion = 10.0.40219.1
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommBank", "CommBank-Server\CommBank.csproj", "{8CA79A33-1C65-4E35-8C43-E5D7D86F91BE}"
++Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommBank", "server\CommBank.csproj", "{8CA79A33-1C65-4E35-8C43-E5D7D86F91BE}"
+ EndProject
+-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommBank.Tests", "CommBank.Tests\CommBank.Tests.csproj", "{7402BDB7-7021-4C7C-AEF4-F592FB605913}"
++Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommBank.Tests", "tests\CommBank.Tests.csproj", "{7402BDB7-7021-4C7C-AEF4-F592FB605913}"
+ EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+diff --git a/data/Accounts.json b/data/Accounts.json
+new file mode 100644
+index 0000000..c94a91d
+--- /dev/null
++++ b/data/Accounts.json
+@@ -0,0 +1,53 @@
++[{
++  "_id": {
++    "$oid": "62a3e6aad25715026d1a2938"
++  },
++  "Number": 123456789,
++  "Name": "Tag's Goal Saver",
++  "Balance": 6483.81,
++  "AccountType": "GoalSaver",
++  "TransactionIds": [
++    {
++      "$oid": "62a3a284d07648900df72860"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72861"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72862"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72863"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72864"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72865"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72866"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72867"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72868"
++    },
++    {
++      "$oid": "62a3a2ded07648900df72869"
++    },
++    {
++      "$oid": "62a3a344d07648900df7286a"
++    },
++    {
++      "$oid": "62a3a344d07648900df7286b"
++    },
++    {
++      "$oid": "62a3a344d07648900df7286c"
++    },
++    {
++      "$oid": "62a3a344d07648900df7286d"
++    }
++  ]
++}]
+\ No newline at end of file
+diff --git a/data/Goals.json b/data/Goals.json
+new file mode 100644
+index 0000000..f42d18b
+--- /dev/null
++++ b/data/Goals.json
+@@ -0,0 +1,94 @@
++[
++  {
++    "_id": {
++      "$oid": "62a3f587102e921da1253d32"
++    },
++    "Name": "House Down Payment",
++    "TargetAmount": 100000,
++    "TargetDate": {
++      "$date": {
++        "$numberLong": "1736312400000"
++      }
++    },
++    "Balance": 73501.82,
++    "Created": {
++      "$date": {
++        "$numberLong": "1654912390857"
++      }
++    },
++    "TransactionIds": null,
++    "TagIds": null,
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3f5e0102e921da1253d33"
++    },
++    "Name": "Tesla Model Y",
++    "TargetAmount": 60000,
++    "TargetDate": {
++      "$date": {
++        "$numberLong": "1662004800000"
++      }
++    },
++    "Balance": 43840.02,
++    "Created": {
++      "$date": {
++        "$numberLong": "1654912480950"
++      }
++    },
++    "TransactionIds": null,
++    "TagIds": null,
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3f62e102e921da1253d34"
++    },
++    "Name": "Trip to London",
++    "TargetAmount": 3500,
++    "TargetDate": {
++      "$date": {
++        "$numberLong": "1659412800000"
++      }
++    },
++    "Created": {
++      "$date": {
++        "$numberLong": "1654912558236"
++      }
++    },
++    "TransactionIds": null,
++    "TagIds": null,
++    "Balance": 753.89,
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a61945fa15f1cd18516a5f"
++    },
++    "Name": "Trip to NYC",
++    "TargetAmount": 800,
++    "TargetDate": {
++      "$date": {
++        "$numberLong": "1702184400000"
++      }
++    },
++    "Balance": 0,
++    "Created": {
++      "$date": {
++        "$numberLong": "1655053065668"
++      }
++    },
++    "TransactionIds": null,
++    "TagIds": null,
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  }
++]
+\ No newline at end of file
+diff --git a/data/Tags.json b/data/Tags.json
+new file mode 100644
+index 0000000..202e1ab
+--- /dev/null
++++ b/data/Tags.json
+@@ -0,0 +1,26 @@
++[{
++  "_id": {
++    "$oid": "62a39d27025ca1ba8f1f1c1e"
++  },
++  "Name": "Groceries"
++},{
++  "_id": {
++    "$oid": "62a39d42025ca1ba8f1f1c1f"
++  },
++  "Name": "Restaurant"
++},{
++  "_id": {
++    "$oid": "62a39d4e025ca1ba8f1f1c20"
++  },
++  "Name": "Income"
++},{
++  "_id": {
++    "$oid": "62a39d5a025ca1ba8f1f1c21"
++  },
++  "Name": "Gas"
++},{
++  "_id": {
++    "$oid": "62a39d63025ca1ba8f1f1c22"
++  },
++  "Name": "Investment"
++}]
+\ No newline at end of file
+diff --git a/data/Transactions.json b/data/Transactions.json
+new file mode 100644
+index 0000000..9320984
+--- /dev/null
++++ b/data/Transactions.json
+@@ -0,0 +1,310 @@
++[
++  {
++    "_id": {
++      "$oid": "62a3a284d07648900df72860"
++    },
++    "TransactionType": "Debit",
++    "Amount": 135.39,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654891140391"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d27025ca1ba8f1f1c1e"
++      }
++    ],
++    "Description": "Whole Foods",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a2ded07648900df72861"
++    },
++    "TransactionType": "Debit",
++    "Amount": 139.26,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654027230566"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d27025ca1ba8f1f1c1e"
++      }
++    ],
++    "Description": "Whole Foods",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a2ebd07648900df72862"
++    },
++    "TransactionType": "Debit",
++    "Amount": 26.39,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654891243091"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d42025ca1ba8f1f1c1f"
++      }
++    ],
++    "Description": "Chipotle",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a2ecd07648900df72863"
++    },
++    "TransactionType": "Debit",
++    "Amount": 21.9,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654027230566"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d42025ca1ba8f1f1c1f"
++      }
++    ],
++    "Description": "Chipotle",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a316d07648900df72864"
++    },
++    "TransactionType": "Credit",
++    "Amount": 5622.81,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654891286080"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d4e025ca1ba8f1f1c20"
++      }
++    ],
++    "Description": "Dropbox",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a318d07648900df72865"
++    },
++    "TransactionType": "Credit",
++    "Amount": 5622.92,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654027230566"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d4e025ca1ba8f1f1c20"
++      }
++    ],
++    "Description": "Dropbox",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a323d07648900df72866"
++    },
++    "TransactionType": "Credit",
++    "Amount": 1439.18,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654891299481"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d4e025ca1ba8f1f1c20"
++      }
++    ],
++    "Description": "Fencer",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a324d07648900df72867"
++    },
++    "TransactionType": "Credit",
++    "Amount": 1439.89,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654027230566"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d4e025ca1ba8f1f1c20"
++      }
++    ],
++    "Description": "Fencer",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a337d07648900df72868"
++    },
++    "TransactionType": "Debit",
++    "Amount": 44.52,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654891319411"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d5a025ca1ba8f1f1c21"
++      }
++    ],
++    "Description": "Gas",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a338d07648900df72869"
++    },
++    "TransactionType": "Debit",
++    "Amount": 44.13,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654027230566"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d5a025ca1ba8f1f1c21"
++      }
++    ],
++    "Description": "Gas",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a344d07648900df7286a"
++    },
++    "TransactionType": "Debit",
++    "Amount": 1500,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654891332111"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d63025ca1ba8f1f1c22"
++      }
++    ],
++    "Description": "Coinbase",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a344d07648900df7286b"
++    },
++    "TransactionType": "Debit",
++    "Amount": 1500,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654027230566"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d63025ca1ba8f1f1c22"
++      }
++    ],
++    "Description": "Coinbase",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a348d07648900df7286c"
++    },
++    "TransactionType": "Debit",
++    "Amount": 1500,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654891336929"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d63025ca1ba8f1f1c22"
++      }
++    ],
++    "Description": "Titan",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  },
++  {
++    "_id": {
++      "$oid": "62a3a349d07648900df7286d"
++    },
++    "TransactionType": "Debit",
++    "Amount": 1500,
++    "DateTime": {
++      "$date": {
++        "$numberLong": "1654027230566"
++      }
++    },
++    "GoalId": null,
++    "TagIds": [
++      {
++        "$oid": "62a39d63025ca1ba8f1f1c22"
++      }
++    ],
++    "Description": "Titan",
++    "UserId": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    }
++  }
++]
+\ No newline at end of file
+diff --git a/data/Users.json b/data/Users.json
+new file mode 100644
+index 0000000..aa8243c
+--- /dev/null
++++ b/data/Users.json
+@@ -0,0 +1,69 @@
++[
++  {
++    "_id": {
++      "$oid": "62a29c15f4605c4c9fa7f306"
++    },
++    "Name": "Tag Ramotar",
++    "Email": "tag@dropbox.com",
++    "Password": "$2a$11$10VhY5XIwBeWA4uLIE.sr.c34UvwLRQPD8yy7z/4iiN6ez5z2Pg1S",
++    "AccountIds": null,
++    "GoalIds": [
++      {
++        "$oid": "62a3f587102e921da1253d32"
++      },
++      {
++        "$oid": "62a3f5e0102e921da1253d33"
++      },
++      {
++        "$oid": "62a3f62e102e921da1253d34"
++      },
++      {
++        "$oid": "62a61945fa15f1cd18516a5f"
++      }
++    ],
++    "TransactionIds": [
++      {
++        "$oid": "62a3a284d07648900df72860"
++      },
++      {
++        "$oid": "62a3a2ded07648900df72861"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72862"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72863"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72864"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72865"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72866"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72867"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72868"
++      },
++      {
++        "$oid": "62a3a2ebd07648900df72869"
++      },
++      {
++        "$oid": "62a3a344d07648900df7286a"
++      },
++      {
++        "$oid": "62a3a344d07648900df7286b"
++      },
++      {
++        "$oid": "62a3a348d07648900df7286c"
++      },
++      {
++        "$oid": "62a3a349d07648900df7286d"
++      }
++    ]
++  }
++]
+\ No newline at end of file
+diff --git a/scripts/seed.py b/scripts/seed.py
+new file mode 100644
+index 0000000..b016a3e
+--- /dev/null
++++ b/scripts/seed.py
+@@ -0,0 +1,54 @@
++import os
++import glob
++from pathlib import Path
++from pymongo import MongoClient
++from bson import json_util
++
++def get_mongo_uri():
++    env_paths = [Path(".env"), Path("../.env"), Path("server/.env")]
++    for path in env_paths:
++        if path.exists():
++            with open(path, "r") as f:
++                for line in f:
++                    line = line.strip()
++                    if line.startswith("MONGODB_URI=") or line.startswith("MONGO_URI="):
++                        return line.split("=", 1)[1].strip()
++    return os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URI")
++
++def seed():
++    uri = get_mongo_uri()
++    if not uri:
++        raise ValueError("MongoDB URI not found in .env or environment variables.")
++
++    print("Connecting to MongoDB...")
++    client = MongoClient(uri)
++    db = client["CommBank"]
++
++    data_dir = Path("data")
++    if not data_dir.exists():
++        data_dir = Path("../data")
++
++    files = sorted(data_dir.glob("*.json"))
++    if not files:
++        print("No JSON files found in data directory.")
++        return
++
++    for file_path in files:
++        collection_name = file_path.stem  # e.g., 'Accounts', 'Goals', etc.
++        collection = db[collection_name]
++
++        with open(file_path, "r", encoding="utf-8") as f:
++            documents = json_util.loads(f.read())
++
++        if documents:
++            # Clear existing seed data to prevent duplicate key errors
++            collection.delete_many({})
++            result = collection.insert_many(documents)
++            print(f"✓ [{collection_name}]: Inserted {len(result.inserted_ids)} documents.")
++        else:
++            print(f"- [{collection_name}]: Empty file, skipped.")
++
++    print("\nDatabase 'CommBank' successfully seeded!")
++
++if __name__ == "__main__":
++    seed()
+diff --git a/CommBank-Server/CommBank.csproj b/server/CommBank.csproj
+similarity index 100%
+rename from CommBank-Server/CommBank.csproj
+rename to server/CommBank.csproj
+diff --git a/server/Configurations/DatabaseSetup.cs b/server/Configurations/DatabaseSetup.cs
+new file mode 100644
+index 0000000..3b01bfc
+--- /dev/null
++++ b/server/Configurations/DatabaseSetup.cs
+@@ -0,0 +1,25 @@
++using MongoDB.Driver;
++
++namespace CommBank.Configurations;
++
++public static class DatabaseSetup
++{
++    public static IServiceCollection AddDatabaseSetup(this IServiceCollection services, IConfiguration configuration)
++    {
++        var connectionString = Environment.GetEnvironmentVariable("MONGODB_URI")
++            ?? Environment.GetEnvironmentVariable("MONGO_URI")
++            ?? configuration.GetConnectionString("CommBank");
++
++        if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("{CONNECTION_STRING}"))
++        {
++            throw new InvalidOperationException(
++                "MongoDB connection string is missing or not configured. " +
++                "Please specify MONGODB_URI in your .env file or server environment variables.");
++        }
++
++        services.AddSingleton<IMongoClient>(_ => new MongoClient(connectionString));
++        services.AddSingleton(sp => sp.GetRequiredService<IMongoClient>().GetDatabase("CommBank"));
++
++        return services;
++    }
++}
+diff --git a/server/Configurations/DependencyInjection.cs b/server/Configurations/DependencyInjection.cs
+new file mode 100644
+index 0000000..a629e56
+--- /dev/null
++++ b/server/Configurations/DependencyInjection.cs
+@@ -0,0 +1,18 @@
++using CommBank.Services;
++
++namespace CommBank.Configurations;
++
++public static class DependencyInjection
++{
++    public static IServiceCollection AddDependencyInjection(this IServiceCollection services)
++    {
++        services.AddSingleton<IAccountsService, AccountsService>();
++        services.AddSingleton<IAuthService, AuthService>();
++        services.AddSingleton<IGoalsService, GoalsService>();
++        services.AddSingleton<ITagsService, TagsService>();
++        services.AddSingleton<ITransactionsService, TransactionsService>();
++        services.AddSingleton<IUsersService, UsersService>();
++
++        return services;
++    }
++}
+diff --git a/server/Configurations/DotEnvLoader.cs b/server/Configurations/DotEnvLoader.cs
+new file mode 100644
+index 0000000..c15076a
+--- /dev/null
++++ b/server/Configurations/DotEnvLoader.cs
+@@ -0,0 +1,28 @@
++namespace CommBank.Configurations;
++
++public static class DotEnvLoader
++{
++    public static void Load()
++    {
++        var candidates = new[] { ".env", Path.Combine("..", ".env") };
++        foreach (var path in candidates)
++        {
++            if (File.Exists(path))
++            {
++                foreach (var line in File.ReadAllLines(path))
++                {
++                    var trimmed = line.Trim();
++                    if (!string.IsNullOrWhiteSpace(trimmed) && !trimmed.StartsWith("#"))
++                    {
++                        var parts = trimmed.Split('=', 2);
++                        if (parts.Length == 2)
++                        {
++                            Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
++                        }
++                    }
++                }
++                break;
++            }
++        }
++    }
++}
+diff --git a/server/Configurations/MiddlewarePipeline.cs b/server/Configurations/MiddlewarePipeline.cs
+new file mode 100644
+index 0000000..6001dd1
+--- /dev/null
++++ b/server/Configurations/MiddlewarePipeline.cs
+@@ -0,0 +1,36 @@
++namespace CommBank.Configurations;
++
++public static class MiddlewarePipeline
++{
++    public static IServiceCollection AddCorsPolicy(this IServiceCollection services)
++    {
++        services.AddCors(options =>
++        {
++            options.AddDefaultPolicy(policy =>
++            {
++                policy.AllowAnyOrigin()
++                      .AllowAnyMethod()
++                      .AllowAnyHeader();
++            });
++        });
++
++        return services;
++    }
++
++    public static IApplicationBuilder UseMiddlewarePipeline(this WebApplication app)
++    {
++        app.UseCors();
++
++        if (app.Environment.IsDevelopment())
++        {
++            app.UseSwagger();
++            app.UseSwaggerUI();
++        }
++
++        app.UseHttpsRedirection();
++        app.UseAuthorization();
++        app.MapControllers();
++
++        return app;
++    }
++}
+diff --git a/CommBank-Server/Controllers/AccountController.cs b/server/Controllers/Accounts/AccountController.cs
+similarity index 60%
+rename from CommBank-Server/Controllers/AccountController.cs
+rename to server/Controllers/Accounts/AccountController.cs
+index b5b2299..3adae00 100644
+--- a/CommBank-Server/Controllers/AccountController.cs
++++ b/server/Controllers/Accounts/AccountController.cs
+@@ -1,4 +1,4 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Mvc;
+ using CommBank.Services;
+ using CommBank.Models;
+ 
+@@ -13,10 +13,18 @@ public class AccountController : ControllerBase
+     public AccountController(IAccountsService accountsService) =>
+         _accountsService = accountsService;
+ 
++    // ==========================================
++    // 1. READ (All Accounts) -> GET: api/Account
++    // Database se sabhi Accounts ki list fetch karta hai
++    // ==========================================
+     [HttpGet]
+     public async Task<List<Account>> Get() =>
+         await _accountsService.GetAsync();
+ 
++    // ==========================================
++    // 2. READ (Single Account by ID) -> GET: api/Account/{id}
++    // Kisi specific Account ko uski 24-character ObjectId se fetch karta hai
++    // ==========================================
+     [HttpGet("{id:length(24)}")]
+     public async Task<ActionResult<Account>> Get(string id)
+     {
+@@ -30,6 +38,10 @@ public class AccountController : ControllerBase
+         return account;
+     }
+ 
++    // ==========================================
++    // 3. CREATE -> POST: api/Account
++    // Naya Account database me create karta hai
++    // ==========================================
+     [HttpPost]
+     public async Task<IActionResult> Post(Account newAccount)
+     {
+@@ -38,6 +50,10 @@ public class AccountController : ControllerBase
+         return CreatedAtAction(nameof(Get), new { id = newAccount.Id }, newAccount);
+     }
+ 
++    // ==========================================
++    // 4. UPDATE -> PUT: api/Account/{id}
++    // Existing Account ko nayi details ke sath update karta hai
++    // ==========================================
+     [HttpPut("{id:length(24)}")]
+     public async Task<IActionResult> Update(string id, Account updatedAccount)
+     {
+@@ -55,6 +71,10 @@ public class AccountController : ControllerBase
+         return NoContent();
+     }
+ 
++    // ==========================================
++    // 5. DELETE -> DELETE: api/Account/{id}
++    // Account ko database se permanently remove karta hai
++    // ==========================================
+     [HttpDelete("{id:length(24)}")]
+     public async Task<IActionResult> Delete(string id)
+     {
+diff --git a/CommBank-Server/Controllers/AuthController.cs b/server/Controllers/Auth/AuthController.cs
+similarity index 52%
+rename from CommBank-Server/Controllers/AuthController.cs
+rename to server/Controllers/Auth/AuthController.cs
+index 52bbe0c..62f97de 100644
+--- a/CommBank-Server/Controllers/AuthController.cs
++++ b/server/Controllers/Auth/AuthController.cs
+@@ -1,18 +1,23 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Mvc;
+ using CommBank.Services;
+-using CommBank.Models;
+ 
+ namespace CommBank.Controllers;
+ 
++public record LoginInput(string Email, string Password);
++
+ [ApiController]
+ [Route("api/Auth")]
+ public class AuthController : ControllerBase
+ {
+-    private readonly AuthService _authService;
++    private readonly IAuthService _authService;
+ 
+-    public AuthController(AuthService authService) =>
++    public AuthController(IAuthService authService) =>
+         _authService = authService;
+ 
++    // ==========================================
++    // AUTHENTICATION (Login) -> POST: api/Auth/Login
++    // Email aur password verify karke user authentication karta hai
++    // ==========================================
+     [HttpPost("Login")]
+     public async Task<IActionResult> Post(LoginInput input)
+     {
+@@ -25,4 +30,4 @@ public class AuthController : ControllerBase
+ 
+         return NoContent();
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/CommBank-Server/Controllers/GoalController.cs b/server/Controllers/Goals/GoalController.cs
+similarity index 56%
+rename from CommBank-Server/Controllers/GoalController.cs
+rename to server/Controllers/Goals/GoalController.cs
+index 98271a5..00c1cbd 100644
+--- a/CommBank-Server/Controllers/GoalController.cs
++++ b/server/Controllers/Goals/GoalController.cs
+@@ -1,4 +1,4 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Mvc;
+ using CommBank.Services;
+ using CommBank.Models;
+ 
+@@ -17,10 +17,18 @@ public class GoalController : ControllerBase
+         _usersService = usersService;
+     }
+ 
++    // ==========================================
++    // 1. READ (All Goals) -> GET: api/Goal
++    // Database se sabhi Goals ki list fetch karta hai
++    // ==========================================
+     [HttpGet]
+     public async Task<List<Goal>> Get() =>
+         await _goalsService.GetAsync();
+ 
++    // ==========================================
++    // 2. READ (Single Goal by ID) -> GET: api/Goal/{id}
++    // Kisi specific Goal ko uski 24-character ObjectId se fetch karta hai
++    // ==========================================
+     [HttpGet("{id:length(24)}")]
+     public async Task<ActionResult<Goal>> Get(string id)
+     {
+@@ -34,15 +42,25 @@ public class GoalController : ControllerBase
+         return goal;
+     }
+ 
++    // ==========================================
++    // 3. READ (Goals for a User) -> GET: api/Goal/User/{id}
++    // Kisi specific User ID se jude saare Goals fetch karta hai
++    // ==========================================
+     [HttpGet("User/{id:length(24)}")]
+     public async Task<List<Goal>?> GetForUser(string id) =>
+         await _goalsService.GetForUserAsync(id);
+ 
++    // ==========================================
++    // 4. CREATE -> POST: api/Goal
++    // Naya Goal create karta hai aur us User ke account me link karta hai
++    // ==========================================
+     [HttpPost]
+     public async Task<IActionResult> Post(Goal newGoal)
+     {
++        // Step A: Naya Goal database me insert karta hai
+         await _goalsService.CreateAsync(newGoal);
+ 
++        // Step B: User ke record me is Goal ki ID add/update karta hai
+         if (newGoal.Id is not null && newGoal.UserId is not null)
+         {
+             var user = await _usersService.GetAsync(newGoal.UserId);
+@@ -65,12 +83,18 @@ public class GoalController : ControllerBase
+             }
+         }
+ 
++        // Step C: HTTP 201 Created status aur naya Goal return karta hai
+         return CreatedAtAction(nameof(Get), new { id = newGoal.Id }, newGoal);
+     }
+ 
++    // ==========================================
++    // 5. UPDATE -> PUT: api/Goal/{id}
++    // Existing Goal ko nayi values ke sath update karta hai
++    // ==========================================
+     [HttpPut("{id:length(24)}")]
+     public async Task<IActionResult> Update(string id, Goal updatedGoal)
+     {
++        // Step A: Check karta hai ki Goal database me exist karta hai ya nahi
+         var goal = await _goalsService.GetAsync(id);
+ 
+         if (goal is null)
+@@ -78,16 +102,22 @@ public class GoalController : ControllerBase
+             return NotFound();
+         }
+ 
++        // Step B: Same ID assign karke database me update kar deta hai
+         updatedGoal.Id = goal.Id;
+ 
+         await _goalsService.UpdateAsync(id, updatedGoal);
+ 
+-        return NoContent();
++        return NoContent(); // HTTP 204 Success
+     }
+ 
++    // ==========================================
++    // 6. DELETE -> DELETE: api/Goal/{id}
++    // Goal ko database se permanently remove karta hai
++    // ==========================================
+     [HttpDelete("{id:length(24)}")]
+     public async Task<IActionResult> Delete(string id)
+     {
++        // Step A: Check karta hai ki Goal exist karta hai ya nahi
+         var goal = await _goalsService.GetAsync(id);
+ 
+         if (goal is null)
+@@ -95,8 +125,9 @@ public class GoalController : ControllerBase
+             return NotFound();
+         }
+ 
++        // Step B: Database se remove karta hai
+         await _goalsService.RemoveAsync(id);
+ 
+-        return NoContent();
++        return NoContent(); // HTTP 204 Success
+     }
+ }
+\ No newline at end of file
+diff --git a/CommBank-Server/Controllers/TagController.cs b/server/Controllers/Tags/TagController.cs
+similarity index 60%
+rename from CommBank-Server/Controllers/TagController.cs
+rename to server/Controllers/Tags/TagController.cs
+index 1311a2f..649ec45 100644
+--- a/CommBank-Server/Controllers/TagController.cs
++++ b/server/Controllers/Tags/TagController.cs
+@@ -1,4 +1,4 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Mvc;
+ using CommBank.Services;
+ 
+ namespace CommBank.Controllers;
+@@ -12,10 +12,18 @@ public class TagController : ControllerBase
+     public TagController(ITagsService tagsService) =>
+         _tagsService = tagsService;
+ 
++    // ==========================================
++    // 1. READ (All Tags) -> GET: api/Tag
++    // Database se sabhi Tags ki list fetch karta hai
++    // ==========================================
+     [HttpGet]
+     public async Task<List<CommBank.Models.Tag>> Get() =>
+         await _tagsService.GetAsync();
+ 
++    // ==========================================
++    // 2. READ (Single Tag by ID) -> GET: api/Tag/{id}
++    // Kisi specific Tag ko uski 24-character ObjectId se fetch karta hai
++    // ==========================================
+     [HttpGet("{id:length(24)}")]
+     public async Task<ActionResult<CommBank.Models.Tag>> Get(string id)
+     {
+@@ -29,6 +37,10 @@ public class TagController : ControllerBase
+         return tag;
+     }
+ 
++    // ==========================================
++    // 3. CREATE -> POST: api/Tag
++    // Naya Tag database me create karta hai
++    // ==========================================
+     [HttpPost]
+     public async Task<IActionResult> Post(CommBank.Models.Tag newTag)
+     {
+@@ -37,6 +49,10 @@ public class TagController : ControllerBase
+         return CreatedAtAction(nameof(Get), new { id = newTag.Id }, newTag);
+     }
+ 
++    // ==========================================
++    // 4. UPDATE -> PUT: api/Tag/{id}
++    // Existing Tag ko nayi details ke sath update karta hai
++    // ==========================================
+     [HttpPut("{id:length(24)}")]
+     public async Task<IActionResult> Update(string id, CommBank.Models.Tag updatedTag)
+     {
+@@ -54,6 +70,10 @@ public class TagController : ControllerBase
+         return NoContent();
+     }
+ 
++    // ==========================================
++    // 5. DELETE -> DELETE: api/Tag/{id}
++    // Tag ko database se permanently remove karta hai
++    // ==========================================
+     [HttpDelete("{id:length(24)}")]
+     public async Task<IActionResult> Delete(string id)
+     {
+diff --git a/CommBank-Server/Controllers/TransactionController.cs b/server/Controllers/Transactions/TransactionController.cs
+similarity index 59%
+rename from CommBank-Server/Controllers/TransactionController.cs
+rename to server/Controllers/Transactions/TransactionController.cs
+index c8e0293..6f9f41d 100644
+--- a/CommBank-Server/Controllers/TransactionController.cs
++++ b/server/Controllers/Transactions/TransactionController.cs
+@@ -1,4 +1,4 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Mvc;
+ using CommBank.Models;
+ using CommBank.Services;
+ 
+@@ -13,14 +13,26 @@ public class TransactionController : ControllerBase
+     public TransactionController(ITransactionsService transactionsService) =>
+         _transactionsService = transactionsService;
+ 
++    // ==========================================
++    // 1. READ (All Transactions) -> GET: api/Transaction
++    // Database se sabhi Transactions ki list fetch karta hai
++    // ==========================================
+     [HttpGet]
+     public async Task<List<Transaction>> Get() =>
+         await _transactionsService.GetAsync();
+ 
++    // ==========================================
++    // 2. READ (Transactions for a User) -> GET: api/Transaction/User/{id}
++    // Kisi specific User ke sabhi Transactions fetch karta hai
++    // ==========================================
+     [HttpGet("User/{id:length(24)}")]
+     public async Task<List<Transaction>?> GetForUser(string id) =>
+     await _transactionsService.GetForUserAsync(id);
+ 
++    // ==========================================
++    // 3. READ (Single Transaction by ID) -> GET: api/Transaction/{id}
++    // Kisi specific Transaction ko uski 24-character ObjectId se fetch karta hai
++    // ==========================================
+     [HttpGet("{id:length(24)}")]
+     public async Task<ActionResult<Transaction>> Get(string id)
+     {
+@@ -34,6 +46,10 @@ public class TransactionController : ControllerBase
+         return transaction;
+     }
+ 
++    // ==========================================
++    // 4. CREATE -> POST: api/Transaction
++    // Naya Transaction create karta hai
++    // ==========================================
+     [HttpPost]
+     public async Task<IActionResult> Post(Transaction newTransaction)
+     {
+@@ -42,6 +58,10 @@ public class TransactionController : ControllerBase
+         return CreatedAtAction(nameof(Get), new { id = newTransaction.Id }, newTransaction);
+     }
+ 
++    // ==========================================
++    // 5. UPDATE -> PUT: api/Transaction/{id}
++    // Existing Transaction ko update karta hai
++    // ==========================================
+     [HttpPut("{id:length(24)}")]
+     public async Task<IActionResult> Update(string id, Transaction updatedTransaction)
+     {
+@@ -59,6 +79,10 @@ public class TransactionController : ControllerBase
+         return NoContent();
+     }
+ 
++    // ==========================================
++    // 6. DELETE -> DELETE: api/Transaction/{id}
++    // Transaction ko database se permanently remove karta hai
++    // ==========================================
+     [HttpDelete("{id:length(24)}")]
+     public async Task<IActionResult> Delete(string id)
+     {
+diff --git a/CommBank-Server/Controllers/UserController.cs b/server/Controllers/Users/UserController.cs
+similarity index 60%
+rename from CommBank-Server/Controllers/UserController.cs
+rename to server/Controllers/Users/UserController.cs
+index b4d1e7c..ae5c01f 100644
+--- a/CommBank-Server/Controllers/UserController.cs
++++ b/server/Controllers/Users/UserController.cs
+@@ -1,4 +1,4 @@
+-﻿using Microsoft.AspNetCore.Mvc;
++using Microsoft.AspNetCore.Mvc;
+ using CommBank.Services;
+ using CommBank.Models;
+ 
+@@ -13,10 +13,18 @@ public class UserController : ControllerBase
+     public UserController(IUsersService usersService) =>
+         _usersService = usersService;
+ 
++    // ==========================================
++    // 1. READ (All Users) -> GET: api/User
++    // Database se sabhi Users ki list fetch karta hai
++    // ==========================================
+     [HttpGet]
+     public async Task<List<User>> Get() =>
+         await _usersService.GetAsync();
+ 
++    // ==========================================
++    // 2. READ (Single User by ID) -> GET: api/User/{id}
++    // Kisi specific User ko uski 24-character ObjectId se fetch karta hai
++    // ==========================================
+     [HttpGet("{id:length(24)}")]
+     public async Task<ActionResult<User>> Get(string id)
+     {
+@@ -30,6 +38,10 @@ public class UserController : ControllerBase
+         return user;
+     }
+ 
++    // ==========================================
++    // 3. CREATE -> POST: api/User
++    // Naya User database me register / create karta hai
++    // ==========================================
+     [HttpPost]
+     public async Task<IActionResult> Post(User newUser)
+     {
+@@ -38,6 +50,10 @@ public class UserController : ControllerBase
+         return CreatedAtAction(nameof(Get), new { id = newUser.Id }, newUser);
+     }
+ 
++    // ==========================================
++    // 4. UPDATE -> PUT: api/User/{id}
++    // Existing User ki details ko update karta hai
++    // ==========================================
+     [HttpPut("{id:length(24)}")]
+     public async Task<IActionResult> Update(string id, User updatedUser)
+     {
+@@ -55,6 +71,10 @@ public class UserController : ControllerBase
+         return NoContent();
+     }
+ 
++    // ==========================================
++    // 5. DELETE -> DELETE: api/User/{id}
++    // User ko database se permanently remove karta hai
++    // ==========================================
+     [HttpDelete("{id:length(24)}")]
+     public async Task<IActionResult> Delete(string id)
+     {
+diff --git a/CommBank-Server/Models/Account.cs b/server/Models/Account.cs
+similarity index 87%
+rename from CommBank-Server/Models/Account.cs
+rename to server/Models/Account.cs
+index cc62e35..16bde8d 100644
+--- a/CommBank-Server/Models/Account.cs
++++ b/server/Models/Account.cs
+@@ -1,9 +1,15 @@
+-﻿using MongoDB.Bson;
++using MongoDB.Bson;
+ using System.Text.Json.Serialization;
+ using MongoDB.Bson.Serialization.Attributes;
+ 
+ namespace CommBank.Models;
+ 
++public enum AccountType
++{
++    GoalSaver,
++    NetBankSaver
++}
++
+ public class Account
+ {
+     [BsonId]
+@@ -22,4 +28,4 @@ public class Account
+ 
+     [BsonRepresentation(BsonType.ObjectId)]
+     public List<string>? TransactionIds { get; set; }
+-}
+\ No newline at end of file
++}
+diff --git a/CommBank-Server/Models/Goal.cs b/server/Models/Goal.cs
+similarity index 92%
+rename from CommBank-Server/Models/Goal.cs
+rename to server/Models/Goal.cs
+index 77ff1ad..436433e 100644
+--- a/CommBank-Server/Models/Goal.cs
++++ b/server/Models/Goal.cs
+@@ -1,4 +1,4 @@
+-﻿using MongoDB.Bson;
++using MongoDB.Bson;
+ using MongoDB.Bson.Serialization.Attributes;
+ 
+ namespace CommBank.Models;
+@@ -25,6 +25,8 @@ public class Goal
+     [BsonRepresentation(BsonType.ObjectId)]
+     public List<string>? TagIds { get; set; }
+ 
++    public string? Icon { get; set; }
++
+     [BsonRepresentation(BsonType.ObjectId)]
+     public string? UserId { get; set; }
+ }
+\ No newline at end of file
+diff --git a/CommBank-Server/Models/Tag.cs b/server/Models/Tag.cs
+similarity index 100%
+rename from CommBank-Server/Models/Tag.cs
+rename to server/Models/Tag.cs
+diff --git a/CommBank-Server/Models/Transaction.cs b/server/Models/Transaction.cs
+similarity index 89%
+rename from CommBank-Server/Models/Transaction.cs
+rename to server/Models/Transaction.cs
+index cd7c521..676e205 100644
+--- a/CommBank-Server/Models/Transaction.cs
++++ b/server/Models/Transaction.cs
+@@ -1,9 +1,16 @@
+-﻿using MongoDB.Bson;
++using MongoDB.Bson;
+ using System.Text.Json.Serialization;
+ using MongoDB.Bson.Serialization.Attributes;
+ 
+ namespace CommBank.Models;
+ 
++public enum TransactionType
++{
++    Credit,
++    Debit,
++    Transfer
++}
++
+ public class Transaction
+ {
+     [BsonId]
+@@ -28,4 +35,4 @@ public class Transaction
+     public string[]? TagIds { get; set; }
+ 
+     public string? Description { get; set; }
+-}
+\ No newline at end of file
++}
+diff --git a/CommBank-Server/Models/User.cs b/server/Models/User.cs
+similarity index 96%
+rename from CommBank-Server/Models/User.cs
+rename to server/Models/User.cs
+index 3fad72b..13c1679 100644
+--- a/CommBank-Server/Models/User.cs
++++ b/server/Models/User.cs
+@@ -1,4 +1,4 @@
+-﻿using MongoDB.Bson;
++using MongoDB.Bson;
+ using MongoDB.Bson.Serialization.Attributes;
+ 
+ namespace CommBank.Models;
+@@ -23,4 +23,4 @@ public class User
+ 
+     [BsonRepresentation(BsonType.ObjectId)]
+     public List<string>? TransactionIds { get; set; }
+-}
+\ No newline at end of file
++}
+diff --git a/server/Program.cs b/server/Program.cs
+new file mode 100644
+index 0000000..0cb0f28
+--- /dev/null
++++ b/server/Program.cs
+@@ -0,0 +1,20 @@
++using CommBank.Configurations;
++
++DotEnvLoader.Load();
++
++var builder = WebApplication.CreateBuilder(args);
++
++builder.Configuration.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("Secrets.json", optional: true);
++
++builder.Services.AddControllers();
++builder.Services.AddEndpointsApiExplorer();
++builder.Services.AddSwaggerGen();
++builder.Services.AddCorsPolicy();
++builder.Services.AddDatabaseSetup(builder.Configuration);
++builder.Services.AddDependencyInjection();
++
++var app = builder.Build();
++
++app.UseMiddlewarePipeline();
++
++app.Run();
+diff --git a/CommBank-Server/Properties/launchSettings.json b/server/Properties/launchSettings.json
+similarity index 100%
+rename from CommBank-Server/Properties/launchSettings.json
+rename to server/Properties/launchSettings.json
+diff --git a/CommBank-Server/Secrets.json b/server/Secrets.json
+similarity index 91%
+rename from CommBank-Server/Secrets.json
+rename to server/Secrets.json
+index 0e5bf94..1214447 100644
+--- a/CommBank-Server/Secrets.json
++++ b/server/Secrets.json
+@@ -1,5 +1,5 @@
+-﻿{
++{
+   "ConnectionStrings": {
+     "CommBank": "{CONNECTION_STRING}"
+   }
+-}
+\ No newline at end of file
++}
+diff --git a/CommBank-Server/Services/AccountService.cs b/server/Services/Accounts/AccountsMutation.cs
+similarity index 66%
+rename from CommBank-Server/Services/AccountService.cs
+rename to server/Services/Accounts/AccountsMutation.cs
+index 52d1cb9..15993db 100644
+--- a/CommBank-Server/Services/AccountService.cs
++++ b/server/Services/Accounts/AccountsMutation.cs
+@@ -1,10 +1,9 @@
+-﻿using Microsoft.Extensions.Options;
+ using CommBank.Models;
+ using MongoDB.Driver;
+ 
+ namespace CommBank.Services;
+ 
+-public class AccountsService : IAccountsService
++public partial class AccountsService : IAccountsService
+ {
+     private readonly IMongoCollection<Account> _accountsCollection;
+ 
+@@ -13,12 +12,9 @@ public class AccountsService : IAccountsService
+         _accountsCollection = mongoDatabase.GetCollection<Account>("Accounts");
+     }
+ 
+-    public async Task<List<Account>> GetAsync() =>
+-        await _accountsCollection.Find(_ => true).ToListAsync();
+-
+-    public async Task<Account?> GetAsync(string id) =>
+-        await _accountsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+-
++    // ==========================================
++    // MUTATIONS (POST / PUT / DELETE - Write Data)
++    // ==========================================
+     public async Task CreateAsync(Account newAccount) =>
+         await _accountsCollection.InsertOneAsync(newAccount);
+ 
+@@ -27,4 +23,4 @@ public class AccountsService : IAccountsService
+ 
+     public async Task RemoveAsync(string id) =>
+         await _accountsCollection.DeleteOneAsync(x => x.Id == id);
+-}
+\ No newline at end of file
++}
+diff --git a/server/Services/Accounts/AccountsQuery.cs b/server/Services/Accounts/AccountsQuery.cs
+new file mode 100644
+index 0000000..c78fbe0
+--- /dev/null
++++ b/server/Services/Accounts/AccountsQuery.cs
+@@ -0,0 +1,16 @@
++using CommBank.Models;
++using MongoDB.Driver;
++
++namespace CommBank.Services;
++
++public partial class AccountsService
++{
++    // ==========================================
++    // QUERIES (GET Operations - Read Data)
++    // ==========================================
++    public async Task<List<Account>> GetAsync() =>
++        await _accountsCollection.Find(_ => true).ToListAsync();
++
++    public async Task<Account?> GetAsync(string id) =>
++        await _accountsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
++}
+diff --git a/CommBank-Server/Services/IAccountService.cs b/server/Services/Accounts/IAccountsService.cs
+similarity index 100%
+rename from CommBank-Server/Services/IAccountService.cs
+rename to server/Services/Accounts/IAccountsService.cs
+diff --git a/CommBank-Server/Services/AuthService.cs b/server/Services/Auth/AuthMutation.cs
+similarity index 83%
+rename from CommBank-Server/Services/AuthService.cs
+rename to server/Services/Auth/AuthMutation.cs
+index c37de8e..5c1d42d 100644
+--- a/CommBank-Server/Services/AuthService.cs
++++ b/server/Services/Auth/AuthMutation.cs
+@@ -1,4 +1,3 @@
+-﻿using Microsoft.Extensions.Options;
+ using CommBank.Models;
+ using MongoDB.Driver;
+ 
+@@ -13,6 +12,9 @@ public class AuthService : IAuthService
+         _usersCollection = mongoDatabase.GetCollection<User>("Users");
+     }
+ 
++    // ==========================================
++    // MUTATIONS (POST / Login / Auth Operations)
++    // ==========================================
+     public async Task<User?> Login(string email, string password)
+     {
+         var user = await _usersCollection
+@@ -22,7 +24,6 @@ public class AuthService : IAuthService
+         if (user is not null)
+         {
+             var isCorrectPassword = BCrypt.Net.BCrypt.Verify(password, user.Password);
+-
+             if (isCorrectPassword)
+             {
+                 return user;
+@@ -31,4 +32,4 @@ public class AuthService : IAuthService
+ 
+         return null;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/CommBank-Server/Services/IAuthService.cs b/server/Services/Auth/IAuthService.cs
+similarity index 100%
+rename from CommBank-Server/Services/IAuthService.cs
+rename to server/Services/Auth/IAuthService.cs
+diff --git a/CommBank-Server/Services/GoalService.cs b/server/Services/Goals/GoalsMutation.cs
+similarity index 58%
+rename from CommBank-Server/Services/GoalService.cs
+rename to server/Services/Goals/GoalsMutation.cs
+index b0c600a..507ad7d 100644
+--- a/CommBank-Server/Services/GoalService.cs
++++ b/server/Services/Goals/GoalsMutation.cs
+@@ -1,9 +1,9 @@
+-﻿using CommBank.Models;
++using CommBank.Models;
+ using MongoDB.Driver;
+ 
+ namespace CommBank.Services;
+ 
+-public class GoalsService : IGoalsService
++public partial class GoalsService : IGoalsService
+ {
+     private readonly IMongoCollection<Goal> _goalsCollection;
+ 
+@@ -12,15 +12,9 @@ public class GoalsService : IGoalsService
+         _goalsCollection = mongoDatabase.GetCollection<Goal>("Goals");
+     }
+ 
+-    public async Task<List<Goal>> GetAsync() =>
+-        await _goalsCollection.Find(_ => true).ToListAsync();
+-
+-    public async Task<List<Goal>?> GetForUserAsync(string id) =>
+-        await _goalsCollection.Find(x => x.UserId == id).ToListAsync();
+-
+-    public async Task<Goal?> GetAsync(string id) =>
+-        await _goalsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+-
++    // ==========================================
++    // MUTATIONS (POST / PUT / DELETE - Write Data)
++    // ==========================================
+     public async Task CreateAsync(Goal newGoal) =>
+         await _goalsCollection.InsertOneAsync(newGoal);
+ 
+@@ -29,4 +23,4 @@ public class GoalsService : IGoalsService
+ 
+     public async Task RemoveAsync(string id) =>
+         await _goalsCollection.DeleteOneAsync(x => x.Id == id);
+-}
+\ No newline at end of file
++}
+diff --git a/server/Services/Goals/GoalsQuery.cs b/server/Services/Goals/GoalsQuery.cs
+new file mode 100644
+index 0000000..6c4cb9b
+--- /dev/null
++++ b/server/Services/Goals/GoalsQuery.cs
+@@ -0,0 +1,19 @@
++using CommBank.Models;
++using MongoDB.Driver;
++
++namespace CommBank.Services;
++
++public partial class GoalsService
++{
++    // ==========================================
++    // QUERIES (GET Operations - Read Data)
++    // ==========================================
++    public async Task<List<Goal>> GetAsync() =>
++        await _goalsCollection.Find(_ => true).ToListAsync();
++
++    public async Task<List<Goal>?> GetForUserAsync(string id) =>
++        await _goalsCollection.Find(x => x.UserId == id).ToListAsync();
++
++    public async Task<Goal?> GetAsync(string id) =>
++        await _goalsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
++}
+diff --git a/CommBank-Server/Services/IGoalsService.cs b/server/Services/Goals/IGoalsService.cs
+similarity index 100%
+rename from CommBank-Server/Services/IGoalsService.cs
+rename to server/Services/Goals/IGoalsService.cs
+diff --git a/CommBank-Server/Services/ITagsService.cs b/server/Services/Tags/ITagsService.cs
+similarity index 100%
+rename from CommBank-Server/Services/ITagsService.cs
+rename to server/Services/Tags/ITagsService.cs
+diff --git a/server/Services/Tags/TagsMutation.cs b/server/Services/Tags/TagsMutation.cs
+new file mode 100644
+index 0000000..96765a5
+--- /dev/null
++++ b/server/Services/Tags/TagsMutation.cs
+@@ -0,0 +1,27 @@
++using CommBank.Models;
++using MongoDB.Driver;
++using Tag = CommBank.Models.Tag;
++
++namespace CommBank.Services;
++
++public partial class TagsService : ITagsService
++{
++    private readonly IMongoCollection<Tag> _tagsCollection;
++
++    public TagsService(IMongoDatabase mongoDatabase)
++    {
++        _tagsCollection = mongoDatabase.GetCollection<Tag>("Tags");
++    }
++
++    // ==========================================
++    // MUTATIONS (POST / PUT / DELETE - Write Data)
++    // ==========================================
++    public async Task CreateAsync(Tag newTag) =>
++        await _tagsCollection.InsertOneAsync(newTag);
++
++    public async Task UpdateAsync(string id, Tag updatedTag) =>
++        await _tagsCollection.ReplaceOneAsync(x => x.Id == id, updatedTag);
++
++    public async Task RemoveAsync(string id) =>
++        await _tagsCollection.DeleteOneAsync(x => x.Id == id);
++}
+diff --git a/server/Services/Tags/TagsQuery.cs b/server/Services/Tags/TagsQuery.cs
+new file mode 100644
+index 0000000..cb74875
+--- /dev/null
++++ b/server/Services/Tags/TagsQuery.cs
+@@ -0,0 +1,17 @@
++using CommBank.Models;
++using MongoDB.Driver;
++using Tag = CommBank.Models.Tag;
++
++namespace CommBank.Services;
++
++public partial class TagsService
++{
++    // ==========================================
++    // QUERIES (GET Operations - Read Data)
++    // ==========================================
++    public async Task<List<Tag>> GetAsync() =>
++        await _tagsCollection.Find(_ => true).ToListAsync();
++
++    public async Task<Tag?> GetAsync(string id) =>
++        await _tagsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
++}
+diff --git a/CommBank-Server/Services/ITransactionsService.cs b/server/Services/Transactions/ITransactionsService.cs
+similarity index 100%
+rename from CommBank-Server/Services/ITransactionsService.cs
+rename to server/Services/Transactions/ITransactionsService.cs
+diff --git a/CommBank-Server/Services/TransactionsService.cs b/server/Services/Transactions/TransactionsMutation.cs
+similarity index 59%
+rename from CommBank-Server/Services/TransactionsService.cs
+rename to server/Services/Transactions/TransactionsMutation.cs
+index 7771846..0cd8cef 100644
+--- a/CommBank-Server/Services/TransactionsService.cs
++++ b/server/Services/Transactions/TransactionsMutation.cs
+@@ -1,10 +1,9 @@
+-﻿using Microsoft.Extensions.Options;
+ using CommBank.Models;
+ using MongoDB.Driver;
+ 
+ namespace CommBank.Services;
+ 
+-public class TransactionsService : ITransactionsService
++public partial class TransactionsService : ITransactionsService
+ {
+     private readonly IMongoCollection<Transaction> _transactionsCollection;
+ 
+@@ -13,15 +12,9 @@ public class TransactionsService : ITransactionsService
+         _transactionsCollection = mongoDatabase.GetCollection<Transaction>("Transactions");
+     }
+ 
+-    public async Task<List<Transaction>> GetAsync() =>
+-        await _transactionsCollection.Find(_ => true).ToListAsync();
+-
+-    public async Task<List<Transaction>?> GetForUserAsync(string id) =>
+-        await _transactionsCollection.Find(x => x.UserId == id).ToListAsync();
+-
+-    public async Task<Transaction?> GetAsync(string id) =>
+-        await _transactionsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+-
++    // ==========================================
++    // MUTATIONS (POST / PUT / DELETE - Write Data)
++    // ==========================================
+     public async Task CreateAsync(Transaction newTransaction) =>
+         await _transactionsCollection.InsertOneAsync(newTransaction);
+ 
+@@ -30,4 +23,4 @@ public class TransactionsService : ITransactionsService
+ 
+     public async Task RemoveAsync(string id) =>
+         await _transactionsCollection.DeleteOneAsync(x => x.Id == id);
+-}
+\ No newline at end of file
++}
+diff --git a/server/Services/Transactions/TransactionsQuery.cs b/server/Services/Transactions/TransactionsQuery.cs
+new file mode 100644
+index 0000000..8b2d389
+--- /dev/null
++++ b/server/Services/Transactions/TransactionsQuery.cs
+@@ -0,0 +1,19 @@
++using CommBank.Models;
++using MongoDB.Driver;
++
++namespace CommBank.Services;
++
++public partial class TransactionsService
++{
++    // ==========================================
++    // QUERIES (GET Operations - Read Data)
++    // ==========================================
++    public async Task<List<Transaction>> GetAsync() =>
++        await _transactionsCollection.Find(_ => true).ToListAsync();
++
++    public async Task<List<Transaction>?> GetForUserAsync(string id) =>
++        await _transactionsCollection.Find(x => x.UserId == id).ToListAsync();
++
++    public async Task<Transaction?> GetAsync(string id) =>
++        await _transactionsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
++}
+diff --git a/CommBank-Server/Services/IUsersService.cs b/server/Services/Users/IUsersService.cs
+similarity index 100%
+rename from CommBank-Server/Services/IUsersService.cs
+rename to server/Services/Users/IUsersService.cs
+diff --git a/CommBank-Server/Services/UsersService.cs b/server/Services/Users/UsersMutation.cs
+similarity index 69%
+rename from CommBank-Server/Services/UsersService.cs
+rename to server/Services/Users/UsersMutation.cs
+index 4c4c32f..469f7d4 100644
+--- a/CommBank-Server/Services/UsersService.cs
++++ b/server/Services/Users/UsersMutation.cs
+@@ -1,10 +1,9 @@
+-﻿using Microsoft.Extensions.Options;
+ using CommBank.Models;
+ using MongoDB.Driver;
+ 
+ namespace CommBank.Services;
+ 
+-public class UsersService : IUsersService
++public partial class UsersService : IUsersService
+ {
+     private readonly IMongoCollection<User> _usersCollection;
+ 
+@@ -13,16 +12,12 @@ public class UsersService : IUsersService
+         _usersCollection = mongoDatabase.GetCollection<User>("Users");
+     }
+ 
+-    public async Task<List<User>> GetAsync() =>
+-        await _usersCollection.Find(_ => true).ToListAsync();
+-
+-    public async Task<User?> GetAsync(string id) =>
+-        await _usersCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+-
++    // ==========================================
++    // MUTATIONS (POST / PUT / DELETE - Write Data)
++    // ==========================================
+     public async Task CreateAsync(User newUser)
+     {
+         newUser.Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password);
+-
+         await _usersCollection.InsertOneAsync(newUser);
+     }
+ 
+@@ -31,4 +26,4 @@ public class UsersService : IUsersService
+ 
+     public async Task RemoveAsync(string id) =>
+         await _usersCollection.DeleteOneAsync(x => x.Id == id);
+-}
+\ No newline at end of file
++}
+diff --git a/server/Services/Users/UsersQuery.cs b/server/Services/Users/UsersQuery.cs
+new file mode 100644
+index 0000000..3b1b046
+--- /dev/null
++++ b/server/Services/Users/UsersQuery.cs
+@@ -0,0 +1,16 @@
++using CommBank.Models;
++using MongoDB.Driver;
++
++namespace CommBank.Services;
++
++public partial class UsersService
++{
++    // ==========================================
++    // QUERIES (GET Operations - Read Data)
++    // ==========================================
++    public async Task<List<User>> GetAsync() =>
++        await _usersCollection.Find(_ => true).ToListAsync();
++
++    public async Task<User?> GetAsync(string id) =>
++        await _usersCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
++}
+diff --git a/CommBank-Server/appsettings.Development.json b/server/appsettings.Development.json
+similarity index 100%
+rename from CommBank-Server/appsettings.Development.json
+rename to server/appsettings.Development.json
+diff --git a/CommBank-Server/appsettings.json b/server/appsettings.json
+similarity index 100%
+rename from CommBank-Server/appsettings.json
+rename to server/appsettings.json
+diff --git a/CommBank.Tests/AccountControllerTests.cs b/tests/AccountControllerTests.cs
+similarity index 100%
+rename from CommBank.Tests/AccountControllerTests.cs
+rename to tests/AccountControllerTests.cs
+diff --git a/CommBank.Tests/CommBank.Tests.csproj b/tests/CommBank.Tests.csproj
+similarity index 92%
+rename from CommBank.Tests/CommBank.Tests.csproj
+rename to tests/CommBank.Tests.csproj
+index 4d9413f..5ba4426 100644
+--- a/CommBank.Tests/CommBank.Tests.csproj
++++ b/tests/CommBank.Tests.csproj
+@@ -22,6 +22,6 @@
+   </ItemGroup>
+ 
+   <ItemGroup>
+-    <ProjectReference Include="..\CommBank-Server\CommBank.csproj" />
++    <ProjectReference Include="..\server\CommBank.csproj" />
+   </ItemGroup>
+ </Project>
+diff --git a/CommBank.Tests/Fake/FakeAccountsService.cs b/tests/Fake/FakeAccountsService.cs
+similarity index 100%
+rename from CommBank.Tests/Fake/FakeAccountsService.cs
+rename to tests/Fake/FakeAccountsService.cs
+diff --git a/CommBank.Tests/Fake/FakeCollections.cs b/tests/Fake/FakeCollections.cs
+similarity index 100%
+rename from CommBank.Tests/Fake/FakeCollections.cs
+rename to tests/Fake/FakeCollections.cs
+diff --git a/CommBank.Tests/Fake/FakeGoalsService.cs b/tests/Fake/FakeGoalsService.cs
+similarity index 100%
+rename from CommBank.Tests/Fake/FakeGoalsService.cs
+rename to tests/Fake/FakeGoalsService.cs
+diff --git a/CommBank.Tests/Fake/FakeTagsService.cs b/tests/Fake/FakeTagsService.cs
+similarity index 100%
+rename from CommBank.Tests/Fake/FakeTagsService.cs
+rename to tests/Fake/FakeTagsService.cs
+diff --git a/CommBank.Tests/Fake/FakeTransactionsService.cs b/tests/Fake/FakeTransactionsService.cs
+similarity index 100%
+rename from CommBank.Tests/Fake/FakeTransactionsService.cs
+rename to tests/Fake/FakeTransactionsService.cs
+diff --git a/CommBank.Tests/Fake/FakeUsersService.cs b/tests/Fake/FakeUsersService.cs
+similarity index 100%
+rename from CommBank.Tests/Fake/FakeUsersService.cs
+rename to tests/Fake/FakeUsersService.cs
+diff --git a/CommBank.Tests/GoalControllerTests.cs b/tests/GoalControllerTests.cs
+similarity index 100%
+rename from CommBank.Tests/GoalControllerTests.cs
+rename to tests/GoalControllerTests.cs
+diff --git a/CommBank.Tests/TagControllerTests.cs b/tests/TagControllerTests.cs
+similarity index 100%
+rename from CommBank.Tests/TagControllerTests.cs
+rename to tests/TagControllerTests.cs
+diff --git a/CommBank.Tests/TransactionControllerTests.cs b/tests/TransactionControllerTests.cs
+similarity index 100%
+rename from CommBank.Tests/TransactionControllerTests.cs
+rename to tests/TransactionControllerTests.cs
+diff --git a/CommBank.Tests/UserControllerTests.cs b/tests/UserControllerTests.cs
+similarity index 100%
+rename from CommBank.Tests/UserControllerTests.cs
+rename to tests/UserControllerTests.cs
+diff --git a/CommBank.Tests/Usings.cs b/tests/Usings.cs
+similarity index 100%
+rename from CommBank.Tests/Usings.cs
+rename to tests/Usings.cs
