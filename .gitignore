@@ -405,3 +405,10 @@ ASALocalRun/
 .localhistory/
 
 
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+

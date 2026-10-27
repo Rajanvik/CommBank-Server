@@ -22,6 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CommBank-Server\CommBank.csproj" />
+    <ProjectReference Include="..\server\CommBank.csproj" />
   </ItemGroup>
 </Project>
