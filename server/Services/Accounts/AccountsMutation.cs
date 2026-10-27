@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.Options;
 using CommBank.Models;
 using MongoDB.Driver;
 
 namespace CommBank.Services;
 
-public class AccountsService : IAccountsService
+public partial class AccountsService : IAccountsService
 {
     private readonly IMongoCollection<Account> _accountsCollection;
 
@@ -13,12 +12,9 @@ public class AccountsService : IAccountsService
         _accountsCollection = mongoDatabase.GetCollection<Account>("Accounts");
     }
 
-    public async Task<List<Account>> GetAsync() =>
-        await _accountsCollection.Find(_ => true).ToListAsync();
-
-    public async Task<Account?> GetAsync(string id) =>
-        await _accountsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
-
+    // ==========================================
+    // MUTATIONS (POST / PUT / DELETE - Write Data)
+    // ==========================================
     public async Task CreateAsync(Account newAccount) =>
         await _accountsCollection.InsertOneAsync(newAccount);
 

@@ -1,4 +1,3 @@
-﻿using Microsoft.Extensions.Options;
 using CommBank.Models;
 using MongoDB.Driver;
 
@@ -13,6 +12,9 @@ public class AuthService : IAuthService
         _usersCollection = mongoDatabase.GetCollection<User>("Users");
     }
 
+    // ==========================================
+    // MUTATIONS (POST / Login / Auth Operations)
+    // ==========================================
     public async Task<User?> Login(string email, string password)
     {
         var user = await _usersCollection
@@ -22,7 +24,6 @@ public class AuthService : IAuthService
         if (user is not null)
         {
             var isCorrectPassword = BCrypt.Net.BCrypt.Verify(password, user.Password);
-
             if (isCorrectPassword)
             {
                 return user;

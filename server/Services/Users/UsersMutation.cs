@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.Options;
 using CommBank.Models;
 using MongoDB.Driver;
 
 namespace CommBank.Services;
 
-public class UsersService : IUsersService
+public partial class UsersService : IUsersService
 {
     private readonly IMongoCollection<User> _usersCollection;
 
@@ -13,16 +12,12 @@ public class UsersService : IUsersService
         _usersCollection = mongoDatabase.GetCollection<User>("Users");
     }
 
-    public async Task<List<User>> GetAsync() =>
-        await _usersCollection.Find(_ => true).ToListAsync();
-
-    public async Task<User?> GetAsync(string id) =>
-        await _usersCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
-
+    // ==========================================
+    // MUTATIONS (POST / PUT / DELETE - Write Data)
+    // ==========================================
     public async Task CreateAsync(User newUser)
     {
         newUser.Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password);
-
         await _usersCollection.InsertOneAsync(newUser);
     }
 

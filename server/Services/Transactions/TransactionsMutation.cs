@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.Options;
 using CommBank.Models;
 using MongoDB.Driver;
 
 namespace CommBank.Services;
 
-public class TransactionsService : ITransactionsService
+public partial class TransactionsService : ITransactionsService
 {
     private readonly IMongoCollection<Transaction> _transactionsCollection;
 
@@ -13,15 +12,9 @@ public class TransactionsService : ITransactionsService
         _transactionsCollection = mongoDatabase.GetCollection<Transaction>("Transactions");
     }
 
-    public async Task<List<Transaction>> GetAsync() =>
-        await _transactionsCollection.Find(_ => true).ToListAsync();
-
-    public async Task<List<Transaction>?> GetForUserAsync(string id) =>
-        await _transactionsCollection.Find(x => x.UserId == id).ToListAsync();
-
-    public async Task<Transaction?> GetAsync(string id) =>
-        await _transactionsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
-
+    // ==========================================
+    // MUTATIONS (POST / PUT / DELETE - Write Data)
+    // ==========================================
     public async Task CreateAsync(Transaction newTransaction) =>
         await _transactionsCollection.InsertOneAsync(newTransaction);
 

@@ -8,25 +8,58 @@ Production-ready backend server and test suite for CommBank.
 CommBank-Server/
 │
 ├── 📂 server/                          # ASP.NET Core Web API
-│   ├── 📁 Configurations/             # Setup modules
+│   ├── 📁 Configurations/             # Setup & configuration modules
 │   │   ├── DotEnvLoader.cs            # Environment (.env) loader
 │   │   ├── DatabaseSetup.cs           # MongoDB connection & client setup
 │   │   ├── DependencyInjection.cs     # Application services registration
 │   │   └── MiddlewarePipeline.cs      # CORS, Swagger & HTTP request pipeline
-│   ├── 📁 Controllers/                # API Endpoints
-│   │   ├── AccountController.cs
-│   │   ├── AuthController.cs
-│   │   ├── GoalController.cs
-│   │   ├── TagController.cs
-│   │   ├── TransactionController.cs
-│   │   └── UserController.cs
-│   ├── 📁 Models/                     # Core Database Models (Exact 5 from ERD)
+│   │
+│   ├── 📁 Controllers/                # HTTP API Routers (Domain Folders)
+│   │   ├── 📁 Accounts/
+│   │   │   └── AccountController.cs   # Exposes /api/account
+│   │   ├── 📁 Auth/
+│   │   │   └── AuthController.cs      # Exposes /api/auth
+│   │   ├── 📁 Goals/
+│   │   │   └── GoalController.cs      # Exposes /api/goal
+│   │   ├── 📁 Tags/
+│   │   │   └── TagController.cs       # Exposes /api/tag
+│   │   ├── 📁 Transactions/
+│   │   │   └── TransactionController.cs # Exposes /api/transaction
+│   │   └── 📁 Users/
+│   │       └── UserController.cs      # Exposes /api/user
+│   │
+│   ├── 📁 Models/                     # Core Database Models (Pure ERD Entities)
 │   │   ├── Account.cs                 # Account Model + AccountType Enum
 │   │   ├── Goal.cs                    # Goal Model
 │   │   ├── Tag.cs                     # Tag Model
 │   │   ├── Transaction.cs             # Transaction Model + TransactionType Enum
-│   │   └── User.cs                    # User Model + LoginInput
-│   ├── 📁 Services/                   # Business Logic & DB queries
+│   │   └── User.cs                    # User Model
+│   │
+│   ├── 📁 Services/                   # Domain Services (Queries & Mutations)
+│   │   ├── 📁 Accounts/
+│   │   │   ├── IAccountsService.cs    # Contract
+│   │   │   ├── AccountsQuery.cs       # GET Operations (Read Data)
+│   │   │   └── AccountsMutation.cs    # POST / PUT / DELETE Operations (Write Data)
+│   │   ├── 📁 Auth/
+│   │   │   ├── IAuthService.cs
+│   │   │   └── AuthMutation.cs        # Login & Auth Mutations
+│   │   ├── 📁 Goals/
+│   │   │   ├── IGoalsService.cs
+│   │   │   ├── GoalsQuery.cs          # GET Operations
+│   │   │   └── GoalsMutation.cs       # POST / PUT / DELETE Operations
+│   │   ├── 📁 Tags/
+│   │   │   ├── ITagsService.cs
+│   │   │   ├── TagsQuery.cs           # GET Operations
+│   │   │   └── TagsMutation.cs        # POST / PUT / DELETE Operations
+│   │   ├── 📁 Transactions/
+│   │   │   ├── ITransactionsService.cs
+│   │   │   ├── TransactionsQuery.cs   # GET Operations
+│   │   │   └── TransactionsMutation.cs# POST / PUT / DELETE Operations
+│   │   └── 📁 Users/
+│   │       ├── IUsersService.cs
+│   │       ├── UsersQuery.cs          # GET Operations
+│   │       └── UsersMutation.cs       # POST / PUT / DELETE Operations
+│   │
 │   ├── 📁 Properties/                 # Launch profiles
 │   ├── 📄 Program.cs                  # Clean Entry Point (20 lines)
 │   ├── 📄 CommBank.csproj             # Project configuration
