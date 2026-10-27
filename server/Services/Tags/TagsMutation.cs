@@ -1,5 +1,6 @@
 using CommBank.Models;
 using MongoDB.Driver;
+using Tag = CommBank.Models.Tag;
 
 namespace CommBank.Services;
 
